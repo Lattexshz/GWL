@@ -18,3 +18,9 @@ features = [
     "windef",
     "gl-gl"
 ]
+
+[dependencies.safex]
+git = "https://github.com/Lattexshz/safex"
+features = [
+    "xlib"
+]
