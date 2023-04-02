@@ -19,7 +19,7 @@ features = [
     "gl-gl"
 ]
 
-[dependencies.safex]
+[target."cfg(unix)".dependencies.safex]
 git = "https://github.com/Lattexshz/safex"
 features = [
     "xlib"

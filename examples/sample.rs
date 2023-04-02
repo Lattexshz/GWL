@@ -1,4 +1,4 @@
-use GWL::window::{ControlFlow, Window, WindowBuilder, WindowEvent};
+use gwl::window::{ControlFlow, Window, WindowBuilder, WindowEvent};
 
 fn main() {
     let window = WindowBuilder::new()

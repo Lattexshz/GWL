@@ -1,13 +1,21 @@
-use safex::xlib::*;
+use std::ffi::{c_int, c_void, OsStr};
+use std::os::windows::ffi::OsStrExt;
+use std::ptr::null_mut;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+use winapi::shared::minwindef::{HMODULE, LPARAM, LRESULT, UINT, WPARAM};
+use winapi::shared::windef::HWND;
+use winapi::um::libloaderapi::GetModuleHandleW;
+use winapi::um::winuser::*;
 use crate::window::{ControlFlow, IWindow, WindowBuildAction, WindowEvent};
 
-pub struct WindowHandle<'a> {
-    pub window: &'a Window
+pub struct WindowHandle {
+    pub hwnd: HWND,
+    pub hinstance: HMODULE
 }
 
 pub struct RawWindow {
-    window: Window
+    hwnd: HWND,
+    hinstance: HMODULE
 }
 
 impl IWindow for RawWindow {
@@ -16,67 +24,124 @@ impl IWindow for RawWindow {
            height: u32,
            x: i32,
            y: i32,
-    build_action: Box<dyn WindowBuildAction>) -> Self {
+           mut build_action: Box<dyn WindowBuildAction>) -> Self {
         build_action.pre_init();
-        let display = Display::open(None);
-        let screen = Screen::default(&display);
-        let root = Window::root_window(&display, &screen);
+        let title_wide: Vec<u16> = OsStr::new(&title)
+            .encode_wide()
+            .chain(Some(0).into_iter())
+            .collect();
 
-        let cmap = ColorMap::default(&display, &screen);
+        unsafe {
+            let hinstance = GetModuleHandleW(std::ptr::null());
 
-        let white = Color::from_rgb(&display, &cmap, 65535, 65535, 65535).get_pixel();
+            let window_class = OsStr::new("window")
+                .encode_wide()
+                .chain(Some(0).into_iter())
+                .collect::<Vec<_>>();
 
-        let window = Window::create_simple(
-            &display,
-            &screen,
-            Some(()),
-            Some(root),
-            y,
-            x,
-            width,
-            height,
-            1,
-            0,
-            white,
-        );
+            let wc = WNDCLASSW {
+                hCursor: std::ptr::null_mut(),
+                hInstance: hinstance,
+                lpszClassName: window_class.as_ptr(),
+                style: CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
+                lpfnWndProc: Some(wndproc),
+                cbClsExtra: 0,
+                cbWndExtra: 0,
+                hIcon: std::ptr::null_mut(),
+                hbrBackground: std::ptr::null_mut(),
+                lpszMenuName: std::ptr::null(),
+            };
 
-        window.set_window_title(&title);
+            RegisterClassW(&wc);
 
-        let handle = WindowHandle {
-            window: &window,
-        };
+            let hwnd = CreateWindowExW(
+                0,
+                window_class.as_ptr(),
+                title_wide.as_ptr(),
+                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                x,
+                y,
+                width as c_int,
+                height as c_int,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                hinstance,
+                std::ptr::null_mut(),
+            );
 
-        build_action.window_created(&handle);
+            let handle = WindowHandle {hwnd,hinstance};
 
-        Self {
-            window
+            build_action.window_created(&handle);
+
+            Self {
+                hwnd,
+                hinstance,
+            }
         }
     }
 
     fn run<F>(&self, callback: F) where F: Fn(WindowEvent, &mut ControlFlow) {
+        let mut message = unsafe {
+            core::mem::zeroed()
+        };
+
         let mut control_flow = ControlFlow::Listen;
 
-        self.window.run(|event| {
-            match control_flow {
-                ControlFlow::Listen => {
-                    match event {
-                        safex::xlib::WindowEvent::Expose => {
-                            callback(WindowEvent::Expose,&mut control_flow);
+        unsafe {
+            while GetMessageW(&mut message, std::ptr::null_mut(), 0, 0) != 0 {
+                match control_flow {
+                    ControlFlow::Listen => {
+                        DispatchMessageW(&message);
+                        match message.message {
+                            WM_PAINT => {
+                                callback(WindowEvent::Expose,&mut control_flow);
+                            }
+
+                            WM_KEYDOWN => {
+                                callback(WindowEvent::KeyDown(message.wParam as u32),&mut control_flow);
+                            }
+
+                            WM_KEYUP => {
+                                callback(WindowEvent::KeyUp(message.wParam as u32),&mut control_flow);
+                            }
+
+                            _ => {}
                         }
                     }
-                }
-                ControlFlow::Exit(code) => {
-                    std::process::exit(code as i32);
+                    ControlFlow::Exit(code) => {
+                        PostQuitMessage(code as c_int);
+                    }
                 }
             }
-        })
+        }
     }
 }
 
 unsafe impl HasRawWindowHandle for RawWindow {
     fn raw_window_handle(&self) -> RawWindowHandle {
-        let mut handle = raw_window_handle::XlibWindowHandle::empty();
-        handle.window = self.window.as_raw();
-        RawWindowHandle::Xlib(handle)
+        let mut handle = raw_window_handle::Win32WindowHandle::empty();
+        handle.hwnd = self.hwnd as *mut c_void;
+        handle.hinstance = self.hinstance as *mut c_void;
+        RawWindowHandle::Win32(handle)
+    }
+}
+
+extern "system" fn wndproc(
+    hWnd: HWND,
+    Msg: UINT,
+    wParam: WPARAM,
+    lParam: LPARAM,
+) -> LRESULT {
+    unsafe {
+        match Msg {
+            WM_PAINT => {
+                ValidateRect(hWnd, std::ptr::null());
+                0
+            }
+            WM_DESTROY => {
+                0
+            }
+            _ => DefWindowProcW(hWnd,Msg,wParam,lParam),
+        }
     }
 }

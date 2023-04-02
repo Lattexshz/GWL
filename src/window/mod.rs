@@ -16,8 +16,8 @@ pub mod windows;
 pub use self::windows::*;
 
 pub trait WindowBuildAction {
-    fn pre_init(&self);
-    fn window_created(&self,handle: &WindowHandle);
+    fn pre_init(&mut self);
+    fn window_created(&mut self,handle: &WindowHandle);
 }
 
 pub struct DefWindowBuildAction;
