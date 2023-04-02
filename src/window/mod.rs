@@ -23,11 +23,11 @@ pub trait WindowBuildAction {
 pub struct DefWindowBuildAction;
 
 impl WindowBuildAction for DefWindowBuildAction {
-    fn pre_init(&self) {
+    fn pre_init(&mut self) {
         
     }
 
-    fn window_created(&self, handle: &WindowHandle) {
+    fn window_created(&mut self, handle: &WindowHandle) {
 
     }
 }
