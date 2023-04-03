@@ -36,7 +36,7 @@ pub struct RawWindow {
     hwnd: HWND,
     hinstance: HMODULE,
 
-    border_width: u32
+    border_width: RefCell<u32>
 }
 
 impl IWindow for RawWindow {
@@ -101,7 +101,7 @@ impl IWindow for RawWindow {
                     Self {
                         hwnd,
                         hinstance,
-                        border_width
+                        border_width: RefCell::new(border_width)
                     }
                 }
             }
@@ -109,7 +109,7 @@ impl IWindow for RawWindow {
                 Self {
                     hwnd: handle.hwnd,
                     hinstance: handle.hinstance,
-                    border_width
+                    border_width: RefCell::new(border_width)
                 }
             }
         }
@@ -134,10 +134,12 @@ impl IWindow for RawWindow {
                             WM_CREATE => {
                                 let mut margins: MARGINS = std::mem::zeroed();
 
-                                margins.cxLeftWidth = self.border_width as c_int;      // 8
-                                margins.cxRightWidth = self.border_width as c_int;    // 8
-                                margins.cyBottomHeight = self.border_width as c_int; // 20
-                                margins.cyTopHeight = self.border_width as c_int;       // 27
+                                let border_width = *self.border_width.borrow();
+
+                                margins.cxLeftWidth = border_width as c_int;      // 8
+                                margins.cxRightWidth = border_width as c_int;    // 8
+                                margins.cyBottomHeight = border_width as c_int; // 20
+                                margins.cyTopHeight = border_width as c_int;       // 27
 
                                 DwmExtendFrameIntoClientArea(self.hwnd, &margins);
                             }
@@ -173,6 +175,37 @@ impl IWindow for RawWindow {
 
     fn get_instance(&self) -> WindowInstance {
         WindowInstance { hwnd:self.hwnd, hinstance:self.hinstance }
+    }
+
+    fn set_window_title(&self, title: &str) {
+        unsafe {
+            let title_wide: Vec<u16> = OsStr::new(title)
+                .encode_wide()
+                .chain(Some(0).into_iter())
+                .collect();
+
+            SetWindowTextW(self.hwnd,title_wide.as_ptr());
+        }
+    }
+
+    fn set_window_border_width(&self, border_width: u32) {
+        *self.border_width.borrow_mut() = border_width;
+    }
+
+    fn get_window_pos(&self) -> (u32, u32) {
+        unsafe {
+            let mut rect = std::mem::zeroed();
+            GetWindowRect(self.hwnd,&mut rect);
+            (rect.left.try_into().unwrap(),rect.top.try_into().unwrap())
+        }
+    }
+
+    fn get_window_size(&self) -> (u32, u32) {
+        unsafe {
+            let mut rect = std::mem::zeroed();
+            GetWindowRect(self.hwnd,&mut rect);
+            (rect.right.try_into().unwrap(),rect.bottom.try_into().unwrap())
+        }
     }
 }
 

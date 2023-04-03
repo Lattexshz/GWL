@@ -94,6 +94,24 @@ impl IWindow for RawWindow {
     fn get_instance(&self) -> WindowInstance {
         WindowInstance { window: &self.window, display: &self.display }
     }
+
+    fn set_window_title(&self, title: &str) {
+        self.window.set_window_title(title);
+    }
+
+    fn set_window_border_width(&self, border_width: u32) {
+
+    }
+
+    fn get_window_pos(&self) -> (u32, u32) {
+        let geometry = self.window.get_geometry();
+        (geometry.x,geometry.y)
+    }
+
+    fn get_window_size(&self) -> (u32, u32) {
+        let geometry = self.window.get_geometry();
+        (geometry.width,geometry.height)
+    }
 }
 
 unsafe impl HasRawWindowHandle for RawWindow {

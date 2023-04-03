@@ -72,6 +72,14 @@ pub trait IWindow {
         F: FnMut(WindowEvent, &mut ControlFlow);
 
     fn get_instance(&self) -> WindowInstance;
+
+    fn set_window_title(&self,title: &str);
+
+    fn set_window_border_width(&self,border_width: u32);
+
+    fn get_window_pos(&self) -> (u32,u32);
+
+    fn get_window_size(&self) -> (u32,u32);
 }
 
 pub struct Window {
@@ -92,6 +100,22 @@ impl Window {
 
     pub fn get_instance(&self) -> WindowInstance {
         self.inner.get_instance()
+    }
+
+    pub fn set_window_title(&self,title: &str) {
+        self.inner.set_window_title(title);
+    }
+
+    fn set_window_border_width(&self,border_width: u32) {
+        self.inner.set_window_border_width(border_width);
+    }
+
+    pub fn get_window_pos(&self) -> (u32,u32) {
+        self.inner.get_window_pos()
+    }
+
+    pub fn get_window_size(&self) -> (u32,u32) {
+        self.inner.get_window_size()
     }
 }
 
