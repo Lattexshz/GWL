@@ -50,6 +50,7 @@ pub trait IWindow {
         height: u32,
         x: i32,
         y: i32,
+        border_width: u32,
         build_action: Box<dyn WindowBuildAction>,
     ) -> Self;
 
@@ -85,6 +86,7 @@ pub struct WindowBuilder {
     title: String,
     width: u32,
     height: u32,
+    border_width: u32,
     x: i32,
     y: i32,
 
@@ -121,6 +123,11 @@ impl WindowBuilder {
         self
     }
 
+    pub fn border_width(mut self, width: u32) -> Self {
+        self.border_width = width;
+        self
+    }
+
     pub fn build_action(mut self, action: Box<dyn WindowBuildAction>) -> Self {
         self.build_action = action;
         self
@@ -133,6 +140,7 @@ impl WindowBuilder {
             self.height,
             self.x,
             self.y,
+            self.border_width,
             self.build_action,
         ))
     }
@@ -144,6 +152,7 @@ impl Default for WindowBuilder {
             title: "".to_string(),
             width: 100,
             height: 100,
+            border_width: 0,
             x: 0,
             y: 0,
             build_action: Box::new(DefWindowBuildAction),

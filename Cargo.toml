@@ -17,6 +17,7 @@ features = [
     "minwindef",
     "windef",
     "dwmapi",
+    "uxtheme",
     "gl-gl"
 ]
 

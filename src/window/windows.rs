@@ -3,13 +3,24 @@ use once_cell::sync::{Lazy, OnceCell};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use std::cell::RefCell;
 use std::ffi::{c_int, c_void, OsStr};
+use std::mem::size_of;
 use std::os::windows::ffi::OsStrExt;
-use std::ptr::null_mut;
-use winapi::shared::minwindef::{HMODULE, LPARAM, LRESULT, UINT, WPARAM};
-use winapi::shared::windef::{HBRUSH, HWND, HWND__, POINT};
+use std::ptr::{addr_of, null_mut};
+use winapi::ENUM;
+use winapi::shared::minwindef::{BOOL, DWORD, HMODULE, INT, LPARAM, LPCVOID, LRESULT, TRUE, UINT, WPARAM};
+use winapi::shared::windef::{COLORREF, HBRUSH, HWND, HWND__, POINT, RECT};
+use winapi::um::dwmapi::{DwmExtendFrameIntoClientArea, DwmIsCompositionEnabled, DWMNCRENDERINGPOLICY, DwmSetWindowAttribute, DWMWA_CAPTION_BUTTON_BOUNDS, DWMWA_NCRENDERING_ENABLED, DWMWA_NCRENDERING_POLICY};
 use winapi::um::libloaderapi::GetModuleHandleW;
-use winapi::um::wingdi::CreateSolidBrush;
+use winapi::um::uxtheme::{CloseThemeData, DrawThemeBackground, IsThemeActive, MARGINS, OpenThemeData};
+use winapi::um::wingdi::{CreateSolidBrush, RGB};
 use winapi::um::winuser::*;
+
+ENUM!{enum DWMWINDOWATTRIBUTE {
+      DWMWA_USE_IMMERSIVE_DARK_MODE = 20,
+      DWMWA_BORDER_COLOR = 34,
+      DWMWA_CAPTION_COLOR = 35,
+      DWMWA_TEXT_COLOR = 36,
+}}
 
 pub struct WindowHandle {
     pub hwnd: HWND,
@@ -21,6 +32,7 @@ pub struct RawWindow {
     hinstance: HMODULE,
 
     msg: i32,
+    border_width: u32
 }
 
 impl IWindow for RawWindow {
@@ -30,6 +42,7 @@ impl IWindow for RawWindow {
         height: u32,
         x: i32,
         y: i32,
+        border_width: u32,
         mut build_action: Box<dyn WindowBuildAction>,
     ) -> Self {
         build_action.pre_init();
@@ -80,12 +93,14 @@ impl IWindow for RawWindow {
 
             let handle = WindowHandle { hwnd, hinstance };
 
+
             build_action.window_created(&handle);
 
             Self {
                 hwnd,
                 hinstance,
                 msg,
+                border_width
             }
         }
     }
@@ -106,6 +121,16 @@ impl IWindow for RawWindow {
                         let proc_message = MSG.borrow();
 
                         match proc_message.message {
+                            WM_CREATE => {
+                                let mut margins: MARGINS = std::mem::zeroed();
+
+                                margins.cxLeftWidth = self.border_width as c_int;      // 8
+                                margins.cxRightWidth = self.border_width as c_int;    // 8
+                                margins.cyBottomHeight = self.border_width as c_int; // 20
+                                margins.cyTopHeight = self.border_width as c_int;       // 27
+
+                                DwmExtendFrameIntoClientArea(self.hwnd, &margins);
+                            }
                             WM_PAINT => {
                                 callback(WindowEvent::Expose, &mut control_flow);
                             }
@@ -151,6 +176,10 @@ static mut MSG: RefCell<Lazy<MSG>> = RefCell::new(Lazy::new(|| unsafe { std::mem
 extern "system" fn wndproc(hWnd: HWND, Msg: UINT, wParam: WPARAM, lParam: LPARAM) -> LRESULT {
     unsafe {
         match Msg {
+            WM_CREATE => {
+                set_msg(Msg, wParam, lParam);
+                0
+            }
             WM_PAINT => {
                 set_msg(Msg, wParam, lParam);
                 0

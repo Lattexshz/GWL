@@ -17,6 +17,7 @@ impl IWindow for RawWindow {
         height: u32,
         x: i32,
         y: i32,
+        border_width: u32,
         build_action: Box<dyn WindowBuildAction>,
     ) -> Self {
         build_action.pre_init();
@@ -37,7 +38,7 @@ impl IWindow for RawWindow {
             x,
             width,
             height,
-            1,
+            border_width,
             0,
             white,
         );
