@@ -4,18 +4,18 @@ use safex::xlib::*;
 
 pub struct WindowHandle {
     pub window: Window,
-    pub display: Display
+    pub display: Display,
 }
 
 pub struct WindowInstance<'a> {
     pub window: &'a Window,
-    pub display: &'a Display
+    pub display: &'a Display,
 }
 
 pub struct RawWindow {
     window: Window,
     display: Display,
-    cmap: ColorMap
+    cmap: ColorMap,
 }
 
 impl IWindow for RawWindow {
@@ -56,30 +56,41 @@ impl IWindow for RawWindow {
 
                 window.set_window_title(&title);
 
-                let handle = WindowInstance { window: &window,display: &display };
+                let handle = WindowInstance {
+                    window: &window,
+                    display: &display,
+                };
 
                 build_action.window_created(&handle);
 
-                Self { window,display,cmap }
+                Self {
+                    window,
+                    display,
+                    cmap,
+                }
             }
 
             Some(handle) => {
                 let screen = Screen::default(&handle.display);
                 let cmap = ColorMap::default(&handle.display, &screen);
-                Self { window:handle.window,display:handle.display,cmap }
+                Self {
+                    window: handle.window,
+                    display: handle.display,
+                    cmap,
+                }
             }
         }
     }
 
     fn run<F>(&self, mut callback: F)
-        where
-            F: FnMut(WindowEvent, &mut ControlFlow),
+    where
+        F: FnMut(WindowEvent, &mut ControlFlow),
     {
         let mut control_flow = ControlFlow::Listen;
 
         self.window.map();
 
-        self.window.run(|event,flow| match control_flow {
+        self.window.run(|event, flow| match control_flow {
             ControlFlow::Listen => match event {
                 safex::xlib::WindowEvent::Expose => {
                     callback(WindowEvent::Expose, &mut control_flow);
@@ -92,25 +103,22 @@ impl IWindow for RawWindow {
     }
 
     fn get_instance(&self) -> WindowInstance {
-        WindowInstance { window: &self.window, display: &self.display }
+        WindowInstance {
+            window: &self.window,
+            display: &self.display,
+        }
     }
 
     fn set_window_title(&self, title: &str) {
         self.window.set_window_title(title);
     }
 
-    fn set_window_border_width(&self, border_width: u32) {
-
-    }
+    fn set_window_border_width(&self, border_width: u32) {}
 
     fn set_undecorated(&self, b: bool) {
         match b {
-            true => {
-
-            }
-            false => {
-
-            }
+            true => {}
+            false => {}
         }
     }
 
@@ -124,12 +132,12 @@ impl IWindow for RawWindow {
 
     fn get_window_pos(&self) -> (u32, u32) {
         let geometry = self.window.get_geometry();
-        (geometry.x,geometry.y)
+        (geometry.x, geometry.y)
     }
 
     fn get_window_size(&self) -> (u32, u32) {
         let geometry = self.window.get_geometry();
-        (geometry.width,geometry.height)
+        (geometry.width, geometry.height)
     }
 }
 

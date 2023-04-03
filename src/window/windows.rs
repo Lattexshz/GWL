@@ -1,25 +1,24 @@
 use crate::window::{ControlFlow, IWindow, WindowBuildAction, WindowEvent};
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::Lazy;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use std::cell::RefCell;
 use std::ffi::{c_int, c_void, OsStr};
 use std::mem::size_of;
 use std::os::windows::ffi::OsStrExt;
-use std::ptr::{addr_of, null_mut};
-use winapi::ENUM;
-use winapi::shared::minwindef::{BOOL, DWORD, HMODULE, INT, LPARAM, LPCVOID, LRESULT, TRUE, UINT, WPARAM};
-use winapi::shared::windef::{COLORREF, HBRUSH, HWND, HWND__, POINT, RECT};
-use winapi::um::dwmapi::{DwmExtendFrameIntoClientArea, DwmIsCompositionEnabled, DWMNCRENDERINGPOLICY, DwmSetWindowAttribute, DWMWA_CAPTION_BUTTON_BOUNDS, DWMWA_NCRENDERING_ENABLED, DWMWA_NCRENDERING_POLICY};
+use std::ptr::null_mut;
+use winapi::shared::minwindef::{DWORD, HMODULE, LPARAM, LPCVOID, LRESULT, UINT, WPARAM};
+use winapi::shared::windef::HWND;
+use winapi::um::dwmapi::{DwmExtendFrameIntoClientArea, DwmSetWindowAttribute};
 use winapi::um::libloaderapi::GetModuleHandleW;
-use winapi::um::uxtheme::{CloseThemeData, DrawThemeBackground, IsThemeActive, MARGINS, OpenThemeData};
-use winapi::um::wingdi::{CreateSolidBrush, RGB};
+use winapi::um::uxtheme::MARGINS;
 use winapi::um::winuser::*;
+use winapi::ENUM;
 
-ENUM!{enum DWMWINDOWATTRIBUTE {
+ENUM! {enum DWMWINDOWATTRIBUTE {
       DWMWA_WINDOW_CORNER_PREFERENCE = 33,
 }}
 
-ENUM!{enum DWM_WINDOW_CORNER_PREFERENCE {
+ENUM! {enum DWM_WINDOW_CORNER_PREFERENCE {
         DWMWCP_DEFAULT      = 0,
         DWMWCP_DONOTROUND   = 1,
         DWMWCP_ROUND        = 2,
@@ -40,7 +39,7 @@ pub struct RawWindow {
     hwnd: HWND,
     hinstance: HMODULE,
 
-    border_width: RefCell<u32>
+    border_width: RefCell<u32>,
 }
 
 impl IWindow for RawWindow {
@@ -60,62 +59,58 @@ impl IWindow for RawWindow {
             .collect();
 
         match build_action.override_window_handle() {
-            None => {
-                unsafe {
-                    let hinstance = GetModuleHandleW(std::ptr::null());
+            None => unsafe {
+                let hinstance = GetModuleHandleW(std::ptr::null());
 
-                    let window_class = OsStr::new("window")
-                        .encode_wide()
-                        .chain(Some(0).into_iter())
-                        .collect::<Vec<_>>();
+                let window_class = OsStr::new("window")
+                    .encode_wide()
+                    .chain(Some(0).into_iter())
+                    .collect::<Vec<_>>();
 
-                    let wc = WNDCLASSW {
-                        hCursor: std::ptr::null_mut(),
-                        hInstance: hinstance,
-                        lpszClassName: window_class.as_ptr(),
-                        style: CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
-                        lpfnWndProc: Some(wndproc),
-                        cbClsExtra: 0,
-                        cbWndExtra: 0,
-                        hIcon: std::ptr::null_mut(),
-                        hbrBackground: std::ptr::null_mut(),
-                        lpszMenuName: std::ptr::null(),
-                    };
+                let wc = WNDCLASSW {
+                    hCursor: std::ptr::null_mut(),
+                    hInstance: hinstance,
+                    lpszClassName: window_class.as_ptr(),
+                    style: CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
+                    lpfnWndProc: Some(wndproc),
+                    cbClsExtra: 0,
+                    cbWndExtra: 0,
+                    hIcon: std::ptr::null_mut(),
+                    hbrBackground: std::ptr::null_mut(),
+                    lpszMenuName: std::ptr::null(),
+                };
 
-                    RegisterClassW(&wc);
+                RegisterClassW(&wc);
 
-                    let mut msg = 0;
+                let mut msg = 0;
 
-                    let hwnd = CreateWindowExW(
-                        0,
-                        window_class.as_ptr(),
-                        title_wide.as_ptr(),
-                        WS_OVERLAPPEDWINDOW,
-                        x,
-                        y,
-                        width as c_int,
-                        height as c_int,
-                        std::ptr::null_mut(),
-                        std::ptr::null_mut(),
-                        hinstance,
-                        &mut msg as *mut i32 as _,
-                    );
-                    let handle = WindowInstance { hwnd, hinstance };
-                    build_action.window_created(&handle);
-                    Self {
-                        hwnd,
-                        hinstance,
-                        border_width: RefCell::new(border_width)
-                    }
-                }
-            }
-            Some(handle) => {
+                let hwnd = CreateWindowExW(
+                    0,
+                    window_class.as_ptr(),
+                    title_wide.as_ptr(),
+                    WS_OVERLAPPEDWINDOW,
+                    x,
+                    y,
+                    width as c_int,
+                    height as c_int,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    hinstance,
+                    &mut msg as *mut i32 as _,
+                );
+                let handle = WindowInstance { hwnd, hinstance };
+                build_action.window_created(&handle);
                 Self {
-                    hwnd: handle.hwnd,
-                    hinstance: handle.hinstance,
-                    border_width: RefCell::new(border_width)
+                    hwnd,
+                    hinstance,
+                    border_width: RefCell::new(border_width),
                 }
-            }
+            },
+            Some(handle) => Self {
+                hwnd: handle.hwnd,
+                hinstance: handle.hinstance,
+                border_width: RefCell::new(border_width),
+            },
         }
     }
 
@@ -140,10 +135,10 @@ impl IWindow for RawWindow {
 
                                 let border_width = *self.border_width.borrow();
 
-                                margins.cxLeftWidth = border_width as c_int;      // 8
-                                margins.cxRightWidth = border_width as c_int;    // 8
+                                margins.cxLeftWidth = border_width as c_int; // 8
+                                margins.cxRightWidth = border_width as c_int; // 8
                                 margins.cyBottomHeight = border_width as c_int; // 20
-                                margins.cyTopHeight = border_width as c_int;       // 27
+                                margins.cyTopHeight = border_width as c_int; // 27
 
                                 DwmExtendFrameIntoClientArea(self.hwnd, &margins);
                             }
@@ -155,18 +150,22 @@ impl IWindow for RawWindow {
                                 callback(WindowEvent::CloseRequested, &mut control_flow);
                             }
 
-                            _ => {
-                                match message.message {
-                                    WM_KEYDOWN => {
-                                        callback(WindowEvent::KeyDown(message.wParam as u32),&mut control_flow);
-                                    }
-
-                                    WM_KEYUP => {
-                                        callback(WindowEvent::KeyUp(message.wParam as u32),&mut control_flow);
-                                    }
-                                    _ => {}
+                            _ => match message.message {
+                                WM_KEYDOWN => {
+                                    callback(
+                                        WindowEvent::KeyDown(message.wParam as u32),
+                                        &mut control_flow,
+                                    );
                                 }
-                            }
+
+                                WM_KEYUP => {
+                                    callback(
+                                        WindowEvent::KeyUp(message.wParam as u32),
+                                        &mut control_flow,
+                                    );
+                                }
+                                _ => {}
+                            },
                         }
                     }
                     ControlFlow::Exit(code) => {
@@ -178,7 +177,10 @@ impl IWindow for RawWindow {
     }
 
     fn get_instance(&self) -> WindowInstance {
-        WindowInstance { hwnd:self.hwnd, hinstance:self.hinstance }
+        WindowInstance {
+            hwnd: self.hwnd,
+            hinstance: self.hinstance,
+        }
     }
 
     fn set_window_title(&self, title: &str) {
@@ -188,7 +190,7 @@ impl IWindow for RawWindow {
                 .chain(Some(0).into_iter())
                 .collect();
 
-            SetWindowTextW(self.hwnd,title_wide.as_ptr());
+            SetWindowTextW(self.hwnd, title_wide.as_ptr());
         }
     }
 
@@ -198,48 +200,72 @@ impl IWindow for RawWindow {
 
     fn set_undecorated(&self, b: bool) {
         match b {
-            true => {
-                unsafe {
-                    DwmSetWindowAttribute(self.hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &DWMWCP_ROUND as *const u32 as *const c_void as LPCVOID, size_of::<u32>() as DWORD);
-                    SetWindowLongW(self.hwnd,GWL_STYLE,(WS_POPUP|WS_BORDER) as winapi::shared::ntdef::LONG);
-                    DwmSetWindowAttribute(self.hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUNDSMALL as LPCVOID, size_of::<u32>() as DWORD);
-                    SetWindowPos(self.hwnd, null_mut(), 0, 0, 0, 0,
-                                 SWP_DRAWFRAME|SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_NOZORDER);
-                }
-            }
-            false => {
-                unsafe {
-                    SetWindowLongW(self.hwnd,GWL_STYLE,WS_OVERLAPPEDWINDOW as winapi::shared::ntdef::LONG);
-                }
-            }
+            true => unsafe {
+                DwmSetWindowAttribute(
+                    self.hwnd,
+                    DWMWA_WINDOW_CORNER_PREFERENCE,
+                    &DWMWCP_ROUND as *const u32 as *const c_void as LPCVOID,
+                    size_of::<u32>() as DWORD,
+                );
+                SetWindowLongW(
+                    self.hwnd,
+                    GWL_STYLE,
+                    (WS_POPUP | WS_BORDER) as winapi::shared::ntdef::LONG,
+                );
+                DwmSetWindowAttribute(
+                    self.hwnd,
+                    DWMWA_WINDOW_CORNER_PREFERENCE,
+                    DWMWCP_ROUNDSMALL as LPCVOID,
+                    size_of::<u32>() as DWORD,
+                );
+                SetWindowPos(
+                    self.hwnd,
+                    null_mut(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER,
+                );
+            },
+            false => unsafe {
+                SetWindowLongW(
+                    self.hwnd,
+                    GWL_STYLE,
+                    WS_OVERLAPPEDWINDOW as winapi::shared::ntdef::LONG,
+                );
+            },
         }
     }
 
     fn show(&self) {
         unsafe {
-            ShowWindow(self.hwnd,SW_SHOW);
+            ShowWindow(self.hwnd, SW_SHOW);
         }
     }
 
     fn hide(&self) {
         unsafe {
-            ShowWindow(self.hwnd,SW_HIDE);
+            ShowWindow(self.hwnd, SW_HIDE);
         }
     }
 
     fn get_window_pos(&self) -> (u32, u32) {
         unsafe {
             let mut rect = std::mem::zeroed();
-            GetWindowRect(self.hwnd,&mut rect);
-            (rect.left.try_into().unwrap(),rect.top.try_into().unwrap())
+            GetWindowRect(self.hwnd, &mut rect);
+            (rect.left.try_into().unwrap(), rect.top.try_into().unwrap())
         }
     }
 
     fn get_window_size(&self) -> (u32, u32) {
         unsafe {
             let mut rect = std::mem::zeroed();
-            GetWindowRect(self.hwnd,&mut rect);
-            (rect.right.try_into().unwrap(),rect.bottom.try_into().unwrap())
+            GetWindowRect(self.hwnd, &mut rect);
+            (
+                rect.right.try_into().unwrap(),
+                rect.bottom.try_into().unwrap(),
+            )
         }
     }
 }

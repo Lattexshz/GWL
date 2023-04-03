@@ -3,7 +3,6 @@
 //! Of course, it is also possible to use the window as-is without making any changes.
 //! See the example for more details.
 
-
 #[cfg(target_os = "linux")]
 pub mod linux;
 
@@ -27,7 +26,9 @@ pub trait WindowBuildAction {
     fn pre_init(&mut self);
     /// Optional: By passing a pre-prepared WindowHandle,
     /// you can replace the window handle stored in the Window structure.
-    fn override_window_handle(&mut self) -> Option<WindowHandle> {None}
+    fn override_window_handle(&mut self) -> Option<WindowHandle> {
+        None
+    }
     /// window is created. This event is ignored when Some is **passed** in ```override_window_handle(&mut self) -> Option<WindowHandle>```
     fn window_created(&mut self, handle: &WindowInstance);
 }
@@ -38,7 +39,7 @@ pub struct DefWindowBuildAction;
 impl WindowBuildAction for DefWindowBuildAction {
     fn pre_init(&mut self) {}
 
-    fn window_created(&mut self, handle: &WindowInstance) {}
+    fn window_created(&mut self, _handle: &WindowInstance) {}
 }
 
 pub enum WindowEvent {
@@ -73,19 +74,19 @@ pub trait IWindow {
 
     fn get_instance(&self) -> WindowInstance;
 
-    fn set_window_title(&self,title: &str);
+    fn set_window_title(&self, title: &str);
 
-    fn set_window_border_width(&self,border_width: u32);
+    fn set_window_border_width(&self, border_width: u32);
 
-    fn set_undecorated(&self,b: bool);
+    fn set_undecorated(&self, b: bool);
 
     fn show(&self);
 
     fn hide(&self);
 
-    fn get_window_pos(&self) -> (u32,u32);
+    fn get_window_pos(&self) -> (u32, u32);
 
-    fn get_window_size(&self) -> (u32,u32);
+    fn get_window_size(&self) -> (u32, u32);
 }
 
 pub struct Window {
@@ -108,11 +109,11 @@ impl Window {
         self.inner.get_instance()
     }
 
-    pub fn set_window_title(&self,title: &str) {
+    pub fn set_window_title(&self, title: &str) {
         self.inner.set_window_title(title);
     }
 
-    pub fn set_window_border_width(&self,border_width: u32) {
+    pub fn set_window_border_width(&self, border_width: u32) {
         self.inner.set_window_border_width(border_width);
     }
 
@@ -128,11 +129,11 @@ impl Window {
         self.inner.hide();
     }
 
-    pub fn get_window_pos(&self) -> (u32,u32) {
+    pub fn get_window_pos(&self) -> (u32, u32) {
         self.inner.get_window_pos()
     }
 
-    pub fn get_window_size(&self) -> (u32,u32) {
+    pub fn get_window_size(&self) -> (u32, u32) {
         self.inner.get_window_size()
     }
 }
@@ -150,6 +151,7 @@ pub struct WindowBuilder {
     border_width: u32,
     x: i32,
     y: i32,
+    undecorated: bool,
 
     build_action: Box<dyn WindowBuildAction>,
 }
@@ -194,7 +196,12 @@ impl WindowBuilder {
         self
     }
 
-    pub fn build(mut self) -> Window {
+    pub fn undecorated(mut self, b: bool) -> Self {
+        self.undecorated = b;
+        self
+    }
+
+    pub fn build(self) -> Window {
         let window = Window::new(RawWindow::new(
             self.title,
             self.width,
@@ -203,7 +210,9 @@ impl WindowBuilder {
             self.y,
             self.border_width,
             self.build_action,
-        ))
+        ));
+        window.set_undecorated(self.undecorated);
+        window
     }
 }
 
@@ -216,6 +225,7 @@ impl Default for WindowBuilder {
             border_width: 0,
             x: 0,
             y: 0,
+            undecorated: false,
             build_action: Box::new(DefWindowBuildAction),
         }
     }
