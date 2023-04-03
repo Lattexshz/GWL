@@ -106,7 +106,7 @@ impl Window {
         self.inner.set_window_title(title);
     }
 
-    fn set_window_border_width(&self,border_width: u32) {
+    pub fn set_window_border_width(&self,border_width: u32) {
         self.inner.set_window_border_width(border_width);
     }
 
