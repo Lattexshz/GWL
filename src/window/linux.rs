@@ -56,7 +56,7 @@ impl IWindow for RawWindow {
 
                 window.set_window_title(&title);
 
-                let handle = WindowHandle { window: window.clone(),display: display.clone() };
+                let handle = WindowInstance { window: &window,display: &display };
 
                 build_action.window_created(&handle);
 

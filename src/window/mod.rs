@@ -1,3 +1,9 @@
+//! # GWL - Generic Windowing Library
+//! GWL focuses on high versatility, one example of which is the ability to execute custom code during window creation to make changes to window handles. Windows can also be created from raw window handles.
+//! Of course, it is also possible to use the window as-is without making any changes.
+//! See the example for more details.
+
+
 #[cfg(target_os = "linux")]
 pub mod linux;
 
@@ -15,12 +21,18 @@ pub mod windows;
 #[cfg(target_os = "windows")]
 pub use self::windows::*;
 
+/// Trait to build a structure to supplement the events that occur during window creation.
 pub trait WindowBuildAction {
+    /// It is called first when WindowBuilder::build() is executed.
     fn pre_init(&mut self);
+    /// Optional: By passing a pre-prepared WindowHandle,
+    /// you can replace the window handle stored in the Window structure.
     fn override_window_handle(&mut self) -> Option<WindowHandle> {None}
+    /// window is created. This event is ignored when Some is **passed** in ```override_window_handle(&mut self) -> Option<WindowHandle>```
     fn window_created(&mut self, handle: &WindowInstance);
 }
 
+/// Default WindowBuildAction
 pub struct DefWindowBuildAction;
 
 impl WindowBuildAction for DefWindowBuildAction {
