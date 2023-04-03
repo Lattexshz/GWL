@@ -8,6 +8,8 @@ pub struct WindowHandle<'a> {
 
 pub struct RawWindow {
     window: Window,
+    display: Display,
+    cmap: ColorMap
 }
 
 impl IWindow for RawWindow {
@@ -18,7 +20,7 @@ impl IWindow for RawWindow {
         x: i32,
         y: i32,
         border_width: u32,
-        build_action: Box<dyn WindowBuildAction>,
+        mut build_action: Box<dyn WindowBuildAction>,
     ) -> Self {
         build_action.pre_init();
         let display = Display::open(None);
@@ -49,16 +51,18 @@ impl IWindow for RawWindow {
 
         build_action.window_created(&handle);
 
-        Self { window }
+        Self { window,display,cmap }
     }
 
     fn run<F>(&self, callback: F)
-    where
-        F: Fn(WindowEvent, &mut ControlFlow),
+        where
+            F: Fn(WindowEvent, &mut ControlFlow),
     {
         let mut control_flow = ControlFlow::Listen;
 
-        self.window.run(|event| match control_flow {
+        self.window.map();
+
+        self.window.run(|event,flow| match control_flow {
             ControlFlow::Listen => match event {
                 safex::xlib::WindowEvent::Expose => {
                     callback(WindowEvent::Expose, &mut control_flow);
