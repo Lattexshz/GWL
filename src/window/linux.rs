@@ -90,6 +90,10 @@ impl IWindow for RawWindow {
             }
         })
     }
+
+    fn get_instance(&self) -> WindowInstance {
+        WindowInstance { window: &self.window, display: &self.display }
+    }
 }
 
 unsafe impl HasRawWindowHandle for RawWindow {

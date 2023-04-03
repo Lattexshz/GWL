@@ -170,6 +170,10 @@ impl IWindow for RawWindow {
             }
         }
     }
+
+    fn get_instance(&self) -> WindowInstance {
+        WindowInstance { hwnd:self.hwnd, hinstance:self.hinstance }
+    }
 }
 
 unsafe impl HasRawWindowHandle for RawWindow {
