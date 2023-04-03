@@ -1,11 +1,15 @@
-use std::path::Display;
 use crate::window::{ControlFlow, IWindow, WindowBuildAction, WindowEvent};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use safex::xlib::*;
 
-pub struct WindowInstance {
+pub struct WindowHandle {
     pub window: Window,
     pub display: Display
+}
+
+pub struct WindowInstance<'a> {
+    pub window: &'a Window,
+    pub display: &'a Display
 }
 
 pub struct RawWindow {
@@ -52,13 +56,13 @@ impl IWindow for RawWindow {
 
                 window.set_window_title(&title);
 
-                let handle = WindowHandle { window: window,display: display };
+                let handle = WindowHandle { window: window.clone(),display: display.clone() };
 
                 build_action.window_created(&handle);
 
                 Self { window,display,cmap }
             }
-            
+
             Some(handle) => {
                 let screen = Screen::default(&handle.display);
                 let cmap = ColorMap::default(&handle.display, &screen);

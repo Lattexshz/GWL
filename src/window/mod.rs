@@ -18,7 +18,7 @@ pub use self::windows::*;
 pub trait WindowBuildAction {
     fn pre_init(&mut self);
     fn override_window_handle(&mut self) -> Option<WindowHandle> {None}
-    fn window_created(&mut self, handle: &WindowHandle);
+    fn window_created(&mut self, handle: &WindowInstance);
 }
 
 pub struct DefWindowBuildAction;
@@ -26,7 +26,7 @@ pub struct DefWindowBuildAction;
 impl WindowBuildAction for DefWindowBuildAction {
     fn pre_init(&mut self) {}
 
-    fn window_created(&mut self, handle: &WindowHandle) {}
+    fn window_created(&mut self, handle: &WindowInstance) {}
 }
 
 pub enum WindowEvent {

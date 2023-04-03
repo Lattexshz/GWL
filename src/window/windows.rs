@@ -27,6 +27,11 @@ pub struct WindowHandle {
     pub hinstance: HMODULE,
 }
 
+pub struct WindowInstance {
+    pub hwnd: HWND,
+    pub hinstance: HMODULE,
+}
+
 pub struct RawWindow {
     hwnd: HWND,
     hinstance: HMODULE,
@@ -91,7 +96,7 @@ impl IWindow for RawWindow {
                         hinstance,
                         &mut msg as *mut i32 as _,
                     );
-                    let handle = WindowHandle { hwnd, hinstance };
+                    let handle = WindowInstance { hwnd, hinstance };
                     build_action.window_created(&handle);
                     Self {
                         hwnd,
@@ -101,7 +106,6 @@ impl IWindow for RawWindow {
                 }
             }
             Some(handle) => {
-                build_action.window_created(&handle);
                 Self {
                     hwnd: handle.hwnd,
                     hinstance: handle.hinstance,
