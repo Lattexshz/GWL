@@ -69,7 +69,7 @@ pub trait IWindow {
 
     fn run<F>(&self, callback: F)
     where
-        F: Fn(WindowEvent, &mut ControlFlow);
+        F: FnMut(WindowEvent, &mut ControlFlow);
 
     fn get_instance(&self) -> WindowInstance;
 }
@@ -85,7 +85,7 @@ impl Window {
 
     pub fn run<F>(&self, callback: F)
     where
-        F: Fn(WindowEvent, &mut ControlFlow),
+        F: FnMut(WindowEvent, &mut ControlFlow),
     {
         self.inner.run(callback);
     }

@@ -115,9 +115,9 @@ impl IWindow for RawWindow {
         }
     }
 
-    fn run<F>(&self, callback: F)
+    fn run<F>(&self, mut callback: F)
     where
-        F: Fn(WindowEvent, &mut ControlFlow),
+        F: FnMut(WindowEvent, &mut ControlFlow),
     {
         let mut message = unsafe { core::mem::zeroed() };
 
