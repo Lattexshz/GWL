@@ -1,9 +1,9 @@
 #[cfg(target_os = "linux")]
 pub mod linux;
 
-use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 #[cfg(target_os = "linux")]
 pub use self::linux::*;
+use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 #[cfg(target_os = "macos")]
 pub mod macos;
@@ -17,70 +17,65 @@ pub use self::windows::*;
 
 pub trait WindowBuildAction {
     fn pre_init(&mut self);
-    fn window_created(&mut self,handle: &WindowHandle);
+    fn window_created(&mut self, handle: &WindowHandle);
 }
 
 pub struct DefWindowBuildAction;
 
 impl WindowBuildAction for DefWindowBuildAction {
-    fn pre_init(&mut self) {
-        
-    }
+    fn pre_init(&mut self) {}
 
-    fn window_created(&mut self, handle: &WindowHandle) {
-
-    }
+    fn window_created(&mut self, handle: &WindowHandle) {}
 }
 
 pub enum WindowEvent {
     Expose,
 
     KeyDown(u32),
-    KeyUp(u32)
+    KeyUp(u32),
+
+    CloseRequested,
 }
 
-#[derive(Copy,Clone,Debug,PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ControlFlow {
     Listen,
-    Exit(u32)
+    Exit(u32),
 }
 
 pub trait IWindow {
-    fn new(title: String,
-           width: u32,
-           height: u32,
-           x: i32,
-           y: i32,
-           build_action: Box<dyn WindowBuildAction>) -> Self;
+    fn new(
+        title: String,
+        width: u32,
+        height: u32,
+        x: i32,
+        y: i32,
+        build_action: Box<dyn WindowBuildAction>,
+    ) -> Self;
 
     fn run<F>(&self, callback: F)
     where
-        F: Fn(WindowEvent,&mut ControlFlow);
+        F: Fn(WindowEvent, &mut ControlFlow);
 }
 
-pub struct Window
-{
-    inner: RawWindow
+pub struct Window {
+    inner: RawWindow,
 }
 
-impl Window
-{
+impl Window {
     pub fn new(raw: RawWindow) -> Self {
-        Self {
-            inner: raw,
-        }
+        Self { inner: raw }
     }
 
     pub fn run<F>(&self, callback: F)
-        where
-            F: Fn(WindowEvent,&mut ControlFlow)
+    where
+        F: Fn(WindowEvent, &mut ControlFlow),
     {
         self.inner.run(callback);
     }
 }
 
-unsafe impl HasRawWindowHandle for Window
-{
+unsafe impl HasRawWindowHandle for Window {
     fn raw_window_handle(&self) -> RawWindowHandle {
         self.inner.raw_window_handle()
     }
@@ -92,8 +87,8 @@ pub struct WindowBuilder {
     height: u32,
     x: i32,
     y: i32,
-    
-    build_action: Box<dyn WindowBuildAction>
+
+    build_action: Box<dyn WindowBuildAction>,
 }
 
 impl WindowBuilder {
@@ -101,7 +96,7 @@ impl WindowBuilder {
         Self::default()
     }
 
-    pub fn title(mut self,title: &str) -> Self {
+    pub fn title(mut self, title: &str) -> Self {
         self.title = title.to_owned();
         self
     }
@@ -126,13 +121,20 @@ impl WindowBuilder {
         self
     }
 
-    pub fn build_action(mut self,action: Box<dyn WindowBuildAction>) -> Self {
+    pub fn build_action(mut self, action: Box<dyn WindowBuildAction>) -> Self {
         self.build_action = action;
         self
     }
 
     pub fn build(mut self) -> Window {
-        Window::new(RawWindow::new(self.title, self.width, self.height,self.x,self.y,self.build_action))
+        Window::new(RawWindow::new(
+            self.title,
+            self.width,
+            self.height,
+            self.x,
+            self.y,
+            self.build_action,
+        ))
     }
 }
 
