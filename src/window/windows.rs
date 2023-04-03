@@ -16,10 +16,14 @@ use winapi::um::wingdi::{CreateSolidBrush, RGB};
 use winapi::um::winuser::*;
 
 ENUM!{enum DWMWINDOWATTRIBUTE {
-      DWMWA_USE_IMMERSIVE_DARK_MODE = 20,
-      DWMWA_BORDER_COLOR = 34,
-      DWMWA_CAPTION_COLOR = 35,
-      DWMWA_TEXT_COLOR = 36,
+      DWMWA_WINDOW_CORNER_PREFERENCE = 33,
+}}
+
+ENUM!{enum DWM_WINDOW_CORNER_PREFERENCE {
+        DWMWCP_DEFAULT      = 0,
+        DWMWCP_DONOTROUND   = 1,
+        DWMWCP_ROUND        = 2,
+        DWMWCP_ROUNDSMALL   = 3,
 }}
 
 pub struct WindowHandle {
@@ -86,7 +90,7 @@ impl IWindow for RawWindow {
                         0,
                         window_class.as_ptr(),
                         title_wide.as_ptr(),
-                        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                        WS_OVERLAPPEDWINDOW,
                         x,
                         y,
                         width as c_int,
@@ -190,6 +194,37 @@ impl IWindow for RawWindow {
 
     fn set_window_border_width(&self, border_width: u32) {
         *self.border_width.borrow_mut() = border_width;
+    }
+
+    fn set_undecorated(&self, b: bool) {
+        match b {
+            true => {
+                unsafe {
+                    DwmSetWindowAttribute(self.hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &DWMWCP_ROUND as *const u32 as *const c_void as LPCVOID, size_of::<u32>() as DWORD);
+                    SetWindowLongW(self.hwnd,GWL_STYLE,(WS_POPUP|WS_BORDER) as winapi::shared::ntdef::LONG);
+                    DwmSetWindowAttribute(self.hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUNDSMALL as LPCVOID, size_of::<u32>() as DWORD);
+                    SetWindowPos(self.hwnd, null_mut(), 0, 0, 0, 0,
+                                 SWP_DRAWFRAME|SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_NOZORDER);
+                }
+            }
+            false => {
+                unsafe {
+                    SetWindowLongW(self.hwnd,GWL_STYLE,WS_OVERLAPPEDWINDOW as winapi::shared::ntdef::LONG);
+                }
+            }
+        }
+    }
+
+    fn show(&self) {
+        unsafe {
+            ShowWindow(self.hwnd,SW_SHOW);
+        }
+    }
+
+    fn hide(&self) {
+        unsafe {
+            ShowWindow(self.hwnd,SW_HIDE);
+        }
     }
 
     fn get_window_pos(&self) -> (u32, u32) {

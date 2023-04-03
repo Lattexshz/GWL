@@ -77,6 +77,12 @@ pub trait IWindow {
 
     fn set_window_border_width(&self,border_width: u32);
 
+    fn set_undecorated(&self,b: bool);
+
+    fn show(&self);
+
+    fn hide(&self);
+
     fn get_window_pos(&self) -> (u32,u32);
 
     fn get_window_size(&self) -> (u32,u32);
@@ -108,6 +114,18 @@ impl Window {
 
     pub fn set_window_border_width(&self,border_width: u32) {
         self.inner.set_window_border_width(border_width);
+    }
+
+    pub fn set_undecorated(&self, b: bool) {
+        self.inner.set_undecorated(b);
+    }
+
+    pub fn show(&self) {
+        self.inner.show();
+    }
+
+    pub fn hide(&self) {
+        self.inner.hide();
     }
 
     pub fn get_window_pos(&self) -> (u32,u32) {
@@ -177,7 +195,7 @@ impl WindowBuilder {
     }
 
     pub fn build(mut self) -> Window {
-        Window::new(RawWindow::new(
+        let window = Window::new(RawWindow::new(
             self.title,
             self.width,
             self.height,

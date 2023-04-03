@@ -103,6 +103,25 @@ impl IWindow for RawWindow {
 
     }
 
+    fn set_undecorated(&self, b: bool) {
+        match b {
+            true => {
+
+            }
+            false => {
+
+            }
+        }
+    }
+
+    fn show(&self) {
+        self.window.map();
+    }
+
+    fn hide(&self) {
+        self.window.unmap();
+    }
+
     fn get_window_pos(&self) -> (u32, u32) {
         let geometry = self.window.get_geometry();
         (geometry.x,geometry.y)
