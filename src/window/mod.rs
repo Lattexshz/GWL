@@ -17,6 +17,7 @@ pub use self::windows::*;
 
 pub trait WindowBuildAction {
     fn pre_init(&mut self);
+    fn override_window_handle(&mut self) -> Option<WindowHandle> {None}
     fn window_created(&mut self, handle: &WindowHandle);
 }
 

@@ -1,9 +1,11 @@
+use std::path::Display;
 use crate::window::{ControlFlow, IWindow, WindowBuildAction, WindowEvent};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use safex::xlib::*;
 
-pub struct WindowHandle<'a> {
-    pub window: &'a Window,
+pub struct WindowInstance {
+    pub window: Window,
+    pub display: Display
 }
 
 pub struct RawWindow {
@@ -23,35 +25,46 @@ impl IWindow for RawWindow {
         mut build_action: Box<dyn WindowBuildAction>,
     ) -> Self {
         build_action.pre_init();
-        let display = Display::open(None);
-        let screen = Screen::default(&display);
-        let root = Window::root_window(&display, &screen);
 
-        let cmap = ColorMap::default(&display, &screen);
+        match build_action.override_window_handle() {
+            None => {
+                let display = Display::open(None);
+                let screen = Screen::default(&display);
+                let root = Window::root_window(&display, &screen);
 
-        let white = Color::from_rgb(&display, &cmap, 65535, 65535, 65535).get_pixel();
+                let cmap = ColorMap::default(&display, &screen);
 
-        let window = Window::create_simple(
-            &display,
-            &screen,
-            Some(()),
-            Some(root),
-            y,
-            x,
-            width,
-            height,
-            border_width,
-            0,
-            white,
-        );
+                let white = Color::from_rgb(&display, &cmap, 65535, 65535, 65535).get_pixel();
 
-        window.set_window_title(&title);
+                let window = Window::create_simple(
+                    &display,
+                    &screen,
+                    Some(()),
+                    Some(root),
+                    y,
+                    x,
+                    width,
+                    height,
+                    border_width,
+                    0,
+                    white,
+                );
 
-        let handle = WindowHandle { window: &window };
+                window.set_window_title(&title);
 
-        build_action.window_created(&handle);
+                let handle = WindowHandle { window: window,display: display };
 
-        Self { window,display,cmap }
+                build_action.window_created(&handle);
+
+                Self { window,display,cmap }
+            }
+            
+            Some(handle) => {
+                let screen = Screen::default(&handle.display);
+                let cmap = ColorMap::default(&handle.display, &screen);
+                Self { window:handle.window,display:handle.display,cmap }
+            }
+        }
     }
 
     fn run<F>(&self, callback: F)

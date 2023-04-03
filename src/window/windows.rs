@@ -31,7 +31,6 @@ pub struct RawWindow {
     hwnd: HWND,
     hinstance: HMODULE,
 
-    msg: i32,
     border_width: u32
 }
 
@@ -51,56 +50,63 @@ impl IWindow for RawWindow {
             .chain(Some(0).into_iter())
             .collect();
 
-        unsafe {
-            let hinstance = GetModuleHandleW(std::ptr::null());
+        match build_action.override_window_handle() {
+            None => {
+                unsafe {
+                    let hinstance = GetModuleHandleW(std::ptr::null());
 
-            let window_class = OsStr::new("window")
-                .encode_wide()
-                .chain(Some(0).into_iter())
-                .collect::<Vec<_>>();
+                    let window_class = OsStr::new("window")
+                        .encode_wide()
+                        .chain(Some(0).into_iter())
+                        .collect::<Vec<_>>();
 
-            let wc = WNDCLASSW {
-                hCursor: std::ptr::null_mut(),
-                hInstance: hinstance,
-                lpszClassName: window_class.as_ptr(),
-                style: CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
-                lpfnWndProc: Some(wndproc),
-                cbClsExtra: 0,
-                cbWndExtra: 0,
-                hIcon: std::ptr::null_mut(),
-                hbrBackground: std::ptr::null_mut(),
-                lpszMenuName: std::ptr::null(),
-            };
+                    let wc = WNDCLASSW {
+                        hCursor: std::ptr::null_mut(),
+                        hInstance: hinstance,
+                        lpszClassName: window_class.as_ptr(),
+                        style: CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
+                        lpfnWndProc: Some(wndproc),
+                        cbClsExtra: 0,
+                        cbWndExtra: 0,
+                        hIcon: std::ptr::null_mut(),
+                        hbrBackground: std::ptr::null_mut(),
+                        lpszMenuName: std::ptr::null(),
+                    };
 
-            RegisterClassW(&wc);
+                    RegisterClassW(&wc);
 
-            let mut msg = 0;
+                    let mut msg = 0;
 
-            let hwnd = CreateWindowExW(
-                0,
-                window_class.as_ptr(),
-                title_wide.as_ptr(),
-                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                x,
-                y,
-                width as c_int,
-                height as c_int,
-                std::ptr::null_mut(),
-                std::ptr::null_mut(),
-                hinstance,
-                &mut msg as *mut i32 as _,
-            );
-
-            let handle = WindowHandle { hwnd, hinstance };
-
-
-            build_action.window_created(&handle);
-
-            Self {
-                hwnd,
-                hinstance,
-                msg,
-                border_width
+                    let hwnd = CreateWindowExW(
+                        0,
+                        window_class.as_ptr(),
+                        title_wide.as_ptr(),
+                        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                        x,
+                        y,
+                        width as c_int,
+                        height as c_int,
+                        std::ptr::null_mut(),
+                        std::ptr::null_mut(),
+                        hinstance,
+                        &mut msg as *mut i32 as _,
+                    );
+                    let handle = WindowHandle { hwnd, hinstance };
+                    build_action.window_created(&handle);
+                    Self {
+                        hwnd,
+                        hinstance,
+                        border_width
+                    }
+                }
+            }
+            Some(handle) => {
+                build_action.window_created(&handle);
+                Self {
+                    hwnd: handle.hwnd,
+                    hinstance: handle.hinstance,
+                    border_width
+                }
             }
         }
     }
