@@ -32,6 +32,9 @@ features = [
     "xlib"
 ]
 
+[target."cfg(unix)".dependencies]
+x11 = { version = "2.21.0", features = ["xlib"] }
+
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
 opt-level = "z"  # Optimize for size.
