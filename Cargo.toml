@@ -33,7 +33,11 @@ features = [
 ]
 
 [target."cfg(unix)".dependencies]
-x11 = { version = "2.21.0", features = ["xlib"] }
+wayland-client = { version = "0.30.0" }
+wayland-protocols = { version = "0.30.0", features = ["client"] }
+futures-channel = "0.3.16"
+futures-util = "0.3"
+tempfile = "3.2"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.

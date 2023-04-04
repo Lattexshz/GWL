@@ -11,6 +11,7 @@ fn main() {
 
     window.run(|event, _control_flow| match event {
         WindowEvent::CloseRequested => {
+
             std::process::exit(0);
         }
 
