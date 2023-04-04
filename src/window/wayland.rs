@@ -19,15 +19,16 @@ pub struct WindowHandle {
 }
 
 pub struct WindowInstance<'a> {
-    display: &'a WlDisplay,
-    surface: &'a WlSurface,
-    compositor: &'a WlCompositor,
-    shell: &'a WlShell
+    pub display: &'a WlDisplay,
+    pub surface: &'a WlSurface,
+    pub compositor: &'a WlCompositor,
+    pub shell: &'a WlShell
 }
 
 pub struct RawWindow {
     state: RefCell<State>,
-    event_queue: RefCell<EventQueue<State>>
+    event_queue: RefCell<EventQueue<State>>,
+    display: WlDisplay
 }
 
 impl IWindow for RawWindow {
@@ -77,7 +78,8 @@ impl IWindow for RawWindow {
 
         Self {
             state: RefCell::new(state),
-            event_queue: RefCell::new(event_queue)
+            event_queue: RefCell::new(event_queue),
+            display
         }
     }
 
@@ -91,7 +93,14 @@ impl IWindow for RawWindow {
     }
 
     fn get_instance(&self) -> WindowInstance {
-        todo!()
+        let instance = WindowInstance {
+            display: &self.display,
+            surface: self.state.borrow().base_surface.unwrap(),
+            compositor: self.state.borrow().compositor.unwrap(),
+            shell: self.state.borrow().shell.unwrap(),
+        };
+
+        instance
     }
 
     fn set_window_title(&self, title: &str) {
