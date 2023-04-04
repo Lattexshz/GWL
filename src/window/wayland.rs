@@ -93,14 +93,7 @@ impl IWindow for RawWindow {
     }
 
     fn get_instance(&self) -> WindowInstance {
-        let instance = WindowInstance {
-            display: &self.display,
-            surface: &self.state.borrow().base_surface.unwrap(),
-            compositor: &self.state.borrow().compositor.unwrap(),
-            shell: &self.state.borrow().shell.unwrap(),
-        };
-
-        instance
+        todo!()
     }
 
     fn set_window_title(&self, title: &str) {
