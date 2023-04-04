@@ -4,10 +4,21 @@
 //! See the example for more details.
 
 #[cfg(target_os = "linux")]
-pub mod linux;
+#[cfg(feature = "xlib")]
+pub mod xlib;
 
 #[cfg(target_os = "linux")]
-pub use self::linux::*;
+#[cfg(feature = "xlib")]
+pub use self::xlib::*;
+
+#[cfg(target_os = "linux")]
+#[cfg(feature = "wayland")]
+pub mod wayland;
+
+#[cfg(target_os = "linux")]
+#[cfg(feature = "wayland")]
+pub use self::wayland::*;
+
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 #[cfg(target_os = "macos")]
