@@ -57,7 +57,7 @@ pub enum ControlFlow {
     Exit(u32),
 }
 
-pub trait IWindow {
+pub trait IWindow<'a> {
     fn new(
         title: String,
         width: u32,
@@ -65,7 +65,7 @@ pub trait IWindow {
         x: i32,
         y: i32,
         border_width: u32,
-        build_action: Box<dyn WindowBuildAction>,
+        build_action: Box<&'a mut dyn WindowBuildAction>,
     ) -> Self;
 
     fn run<F>(&self, callback: F)
@@ -144,7 +144,7 @@ unsafe impl HasRawWindowHandle for Window {
     }
 }
 
-pub struct WindowBuilder {
+pub struct WindowBuilder<'a> {
     title: String,
     width: u32,
     height: u32,
@@ -153,10 +153,10 @@ pub struct WindowBuilder {
     y: i32,
     undecorated: bool,
 
-    build_action: Box<dyn WindowBuildAction>,
+    build_action: Option<Box<&'a mut dyn WindowBuildAction>>,
 }
 
-impl WindowBuilder {
+impl<'a> WindowBuilder<'a> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -191,7 +191,7 @@ impl WindowBuilder {
         self
     }
 
-    pub fn build_action(mut self, action: Box<dyn WindowBuildAction>) -> Self {
+    pub fn build_action(mut self, action: Option<Box<&'a mut dyn WindowBuildAction>>) -> Self {
         self.build_action = action;
         self
     }
@@ -209,14 +209,14 @@ impl WindowBuilder {
             self.x,
             self.y,
             self.border_width,
-            self.build_action,
+            self.build_action.unwrap(),
         ));
         window.set_undecorated(self.undecorated);
         window
     }
 }
 
-impl Default for WindowBuilder {
+impl Default for WindowBuilder<'_> {
     fn default() -> Self {
         Self {
             title: "".to_string(),
@@ -226,7 +226,7 @@ impl Default for WindowBuilder {
             x: 0,
             y: 0,
             undecorated: false,
-            build_action: Box::new(DefWindowBuildAction),
+            build_action: None,
         }
     }
 }

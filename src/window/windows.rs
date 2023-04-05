@@ -1,4 +1,4 @@
-use crate::window::{ControlFlow, IWindow, WindowBuildAction, WindowEvent};
+use crate::window::{ControlFlow, DefWindowBuildAction, IWindow, WindowBuildAction, WindowEvent};
 use once_cell::sync::Lazy;
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use std::cell::RefCell;
@@ -42,7 +42,7 @@ pub struct RawWindow {
     border_width: RefCell<u32>,
 }
 
-impl IWindow for RawWindow {
+impl IWindow<'_> for RawWindow {
     fn new(
         title: String,
         width: u32,
@@ -50,7 +50,7 @@ impl IWindow for RawWindow {
         x: i32,
         y: i32,
         border_width: u32,
-        mut build_action: Box<dyn WindowBuildAction>,
+        mut build_action: Box<&mut dyn WindowBuildAction>,
     ) -> Self {
         build_action.pre_init();
         let title_wide: Vec<u16> = OsStr::new(&title)
