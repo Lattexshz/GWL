@@ -132,12 +132,12 @@ impl IWindow for RawWindow {
 
     fn get_window_pos(&self) -> (u32, u32) {
         let geometry = self.window.get_geometry();
-        (geometry.x.try_into().unwrap(), geometry.y.try_into().unwrap())
+        (geometry.x, geometry.y)
     }
 
     fn get_window_size(&self) -> (u32, u32) {
         let geometry = self.window.get_geometry();
-        (geometry.width.try_into().unwrap(), geometry.height.try_into().unwrap())
+        (geometry.width, geometry.height)
     }
 }
 
