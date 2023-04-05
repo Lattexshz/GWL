@@ -263,8 +263,8 @@ impl IWindow<'_> for RawWindow {
             let mut rect = std::mem::zeroed();
             GetWindowRect(self.hwnd, &mut rect);
             (
-                rect.right.try_into().unwrap(),
-                rect.bottom.try_into().unwrap(),
+                (rect.right-rect.left) as u32,
+                (rect.bottom-rect.top) as u32,
             )
         }
     }

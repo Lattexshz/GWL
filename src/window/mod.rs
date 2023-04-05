@@ -157,8 +157,17 @@ pub struct WindowBuilder<'a> {
 }
 
 impl<'a> WindowBuilder<'a> {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(action: Box<&'a mut dyn WindowBuildAction>) -> Self {
+        Self {
+            title: "".to_string(),
+            width: 100,
+            height: 100,
+            border_width: 0,
+            x: 0,
+            y: 0,
+            undecorated: false,
+            build_action: Some(action),
+        }
     }
 
     pub fn title(mut self, title: &str) -> Self {
@@ -191,11 +200,6 @@ impl<'a> WindowBuilder<'a> {
         self
     }
 
-    pub fn build_action(mut self, action: Option<Box<&'a mut dyn WindowBuildAction>>) -> Self {
-        self.build_action = action;
-        self
-    }
-
     pub fn undecorated(mut self, b: bool) -> Self {
         self.undecorated = b;
         self
@@ -213,20 +217,5 @@ impl<'a> WindowBuilder<'a> {
         ));
         window.set_undecorated(self.undecorated);
         window
-    }
-}
-
-impl Default for WindowBuilder<'_> {
-    fn default() -> Self {
-        Self {
-            title: "".to_string(),
-            width: 100,
-            height: 100,
-            border_width: 0,
-            x: 0,
-            y: 0,
-            undecorated: false,
-            build_action: None,
-        }
     }
 }
