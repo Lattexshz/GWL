@@ -150,22 +150,24 @@ impl IWindow<'_> for RawWindow {
                                 callback(WindowEvent::CloseRequested, &mut control_flow);
                             }
 
-                            _ => match message.message {
-                                WM_KEYDOWN => {
-                                    callback(
-                                        WindowEvent::KeyDown(message.wParam as u32),
-                                        &mut control_flow,
-                                    );
-                                }
+                            _ => {},
+                        }
 
-                                WM_KEYUP => {
-                                    callback(
-                                        WindowEvent::KeyUp(message.wParam as u32),
-                                        &mut control_flow,
-                                    );
-                                }
-                                _ => {}
-                            },
+                        match message.message {
+                            WM_KEYDOWN => {
+                                callback(
+                                    WindowEvent::KeyDown(message.wParam as u32),
+                                    &mut control_flow,
+                                );
+                            }
+
+                            WM_KEYUP => {
+                                callback(
+                                    WindowEvent::KeyUp(message.wParam as u32),
+                                    &mut control_flow,
+                                );
+                            }
+                            _ => {}
                         }
                     }
                     ControlFlow::Exit(code) => {

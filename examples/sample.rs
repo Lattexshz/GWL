@@ -15,6 +15,9 @@ fn main() {
         WindowEvent::CloseRequested => {
             std::process::exit(0);
         }
+        WindowEvent::KeyDown(c) => {
+            println!("{}",c);
+        }
         _ => {}
     })
 }
