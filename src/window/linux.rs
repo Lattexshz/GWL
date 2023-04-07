@@ -122,6 +122,28 @@ impl IWindow for RawWindow {
         }
     }
 
+    fn set_minimized(&self, b: bool) {
+        match b {
+            true => {
+                self.window.unmap();
+            }
+            false => {
+                self.window.map();
+            }
+        }
+    }
+
+    fn set_maximized(&self, b: bool) {
+        match b {
+            true => {
+                self.window.unmap();
+            }
+            false => {
+                self.window.map();
+            }
+        }
+    }
+
     fn show(&self) {
         self.window.map();
     }

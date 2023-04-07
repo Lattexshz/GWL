@@ -16,7 +16,9 @@ fn main() {
             std::process::exit(0);
         }
         WindowEvent::KeyDown(c) => {
-            println!("{}",c);
+            match char::from_u32(c).unwrap() {
+                _ => {}
+            }
         }
         _ => {}
     })

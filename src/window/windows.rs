@@ -240,6 +240,32 @@ impl IWindow<'_> for RawWindow {
         }
     }
 
+    fn set_minimized(&self, b: bool) {
+        match b {
+            true => {
+                unsafe {
+                    ShowWindow(self.hwnd,SW_MINIMIZE);
+                }
+            }
+            false => {
+                self.show();
+            }
+        }
+    }
+
+    fn set_maximized(&self, b: bool) {
+        match b {
+            true => {
+                unsafe {
+                    ShowWindow(self.hwnd,SW_MAXIMIZE);
+                }
+            }
+            false => {
+                self.show();
+            }
+        }
+    }
+
     fn show(&self) {
         unsafe {
             ShowWindow(self.hwnd, SW_SHOW);

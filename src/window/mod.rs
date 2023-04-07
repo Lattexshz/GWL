@@ -80,6 +80,10 @@ pub trait IWindow<'a> {
 
     fn set_undecorated(&self, b: bool);
 
+    fn set_minimized(&self, b: bool);
+
+    fn set_maximized(&self, b: bool);
+
     fn show(&self);
 
     fn hide(&self);
@@ -119,6 +123,14 @@ impl Window {
 
     pub fn set_undecorated(&self, b: bool) {
         self.inner.set_undecorated(b);
+    }
+
+    pub fn set_maximized(&self, b: bool) {
+        self.inner.set_maximized(b);
+    }
+
+    pub fn set_minimized(&self, b: bool) {
+        self.inner.set_minimized(b);
     }
 
     pub fn show(&self) {
